@@ -11,11 +11,26 @@ use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller{
 
+    /**
+     * Redirects the user to the Zoom OAuth page to authorize the
+     * app to access her information
+     *
+     * @return \Illuminate\Support\Facades\Redirect
+     */
     public function oauthAccessRequest(){
         return redirect(
             Zoomel::getAuthLink()
         );
     }
+
+
+    /**
+     * Handles the Zoom OAuth authorization response
+     * and requests the access token to the Zoom API
+     *
+     * @param Illuminate\Http\Request $request
+     * @return \Illuminate\Support\Facades\Redirect
+     */
 
     public function oauthAccessResponse(Request $request){
         if($request->filled('code')){

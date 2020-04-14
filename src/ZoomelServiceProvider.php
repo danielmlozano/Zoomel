@@ -30,13 +30,22 @@ class ZoomelServiceProvider extends ServiceProvider
         $this->registerPublishing();
     }
 
-
+    /**
+     * Setup the configuration for Zoomel.
+     *
+     * @return void
+     */
     private function configure(){
         $this->mergeConfigFrom(
             __DIR__.'/../config/zoomel.php','zoomel'
         );
     }
 
+    /**
+     * Register the package routes.
+     *
+     * @return void
+     */
     private function registerRoutes(){
         if(Zoomel::$register_routes){
             Route::group([
@@ -49,12 +58,22 @@ class ZoomelServiceProvider extends ServiceProvider
         }
     }
 
+    /**
+     * Register the package migrations.
+     *
+     * @return void
+     */
     private function registerMigrations(){
         if(Zoomel::$register_migrations && $this->app->runningInConsole()){
             $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         }
     }
 
+    /**
+     * Register the package's publishable resources.
+     *
+     * @return void
+     */
     private function registerPublishing(){
         if($this->app->runningInConsole()){
             $this->publishes([
