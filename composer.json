@@ -1,0 +1,33 @@
+{
+    "name": "danielmlozano/zoomel",
+    "description": "A Zoom OAuth Wrapper for Laravel",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "realdanielmlozano",
+            "email": "daniel@inweb.mx"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Danielmlozano\\Zoomel\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^7.2",
+        "illuminate/support": "^6.0|^7.0",
+        "illuminate/http": "^6.0|^7.0",
+        "illuminate/routing": "^6.0|^7.0",
+        "illuminate/database": "^6.0|^7.0",
+        "guzzlehttp/guzzle": "^6.3"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Danielmlozano\\Zoomel\\ZoomelServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev"
+}
