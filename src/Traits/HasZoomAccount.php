@@ -3,6 +3,9 @@ namespace Danielmlozano\Zoomel\Traits;
 
 use Danielmlozano\Zoomel\ZoomUserToken;
 use Danielmlozano\Zoomel\Zoom;
+use Danielmlozano\Zoomel\ZoomMeeting;
+use Danielmlozano\Zoomel\ZoomMeetingsList;
+use Danielmlozano\Zoomel\ZoomUser;
 
 trait HasZoomAccount {
 
@@ -38,7 +41,7 @@ trait HasZoomAccount {
         $zoom = new Zoom($this);
         $zoom_account = $zoom->getZoomUser();
         if($zoom_account['status_code']==200){
-            return $zoom_account['content'];
+            return new ZoomUser($zoom_account['content']);
         }
         else{
             return $zoom_account['response']['message'];
@@ -47,14 +50,15 @@ trait HasZoomAccount {
 
     /**
      * Returns the Zoom user meetings list from the Zoom API
-     *
-     * @return array
+     * @param int $page
+     * @param int $page_size
+     * @return \Danielmlozano\Zoomel\ZoomMeetingsList
     */
-    public function getMeetings(){
+    public function getMeetings(int $page = 1, $page_size = 30){
         $zoom = new Zoom($this);
-        $meetings = $zoom->getZoomMeetings();
+        $meetings = $zoom->getZoomMeetings($page,$page_size);
         if($meetings['status_code']==200){
-            return $meetings['content'];
+            return new ZoomMeetingsList($meetings['content']);
         }
         else{
             return $meetings['response']['message'];
@@ -64,13 +68,13 @@ trait HasZoomAccount {
     /**
      * Return a single Zoom Meeting
      * @param int $meeting_id
-     * @return array
+     * @return \Danielmlozano\Zoomel\ZoomMeeting
     */
     public function getMeeting(int $meeting_id){
         $zoom = new Zoom($this);
         $meetings = $zoom->getZoomMeeting($meeting_id);
         if($meetings['status_code']==200){
-            return $meetings['content'];
+            return new ZoomMeeting($meetings['content']);
         }
         else{
             return $meetings['response']['message'];
@@ -80,14 +84,14 @@ trait HasZoomAccount {
     /**
      * Creates a Zoom meeting
      * @param array $meeting_data
-     * @return array
+     * @return \Danielmlozano\Zoomel\ZoomMeeting
      *
      */
     public function createMeeting(array $meeting_data){
         $zoom = new Zoom($this);
         $new_meeting = $zoom->createZoomMeeting($meeting_data);
         if($new_meeting['status_code']==201){
-            return $new_meeting['content'];
+            return new ZoomMeeting($new_meeting['content']);
         }
         else{
             return $new_meeting['response']['message'];
@@ -98,7 +102,7 @@ trait HasZoomAccount {
      * Updates a Zoom meeting
      * @param int $meeting_id
      * @param array $meeting_data
-     * @return array
+     * @return string
      *
      */
     public function updateMeeting(int $meeting_id, array $meeting_data){
@@ -115,7 +119,7 @@ trait HasZoomAccount {
     /**
      * Deletes a Zoom Meeting
      * @param int $meeting_id
-     * @return array
+     * @return string
     */
     public function deleteMeeting(int $meeting_id){
         $zoom = new Zoom($this);

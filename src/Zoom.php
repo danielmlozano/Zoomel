@@ -71,14 +71,14 @@ class Zoom
      *
      * @var string
      */
-    public $access_link;
+    protected $access_link;
 
     /**
      * Determines if the Access token is refreshing
      *
      * @var bool
      */
-    public $refreshing_access_token = false;
+    private $refreshing_access_token = false;
 
 
     /**
@@ -258,13 +258,21 @@ class Zoom
     /**
      * Get the Zoom User meetings list from the Zoom API
      *
+     * @param int $page
+     * @param int $page_size
      * @return array
      *
      */
-    public function getZoomMeetings(){
+    public function getZoomMeetings(int $page = 1, int $page_size = 30){
         try{
+            $options = [
+                'query' => [
+                    'page_size' => $page_size,
+                    'page_number' => $page
+                ]
+            ];
             $endpoint = $this->zoom_api_base_url."/users/me/meetings";
-            return $this->request("GET",$endpoint);
+            return $this->request("GET",$endpoint,$options);
         }
         catch(\Exception $e){
             $this->handleException($e);
