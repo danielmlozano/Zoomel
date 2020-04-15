@@ -19,7 +19,7 @@ The package is still in development. Any contributions or comments are welcome.
 "repositories": [
     {
         "type": "vcs",
-        "url": "https://github.com/danielmlozano"
+        "url": "https://github.com/danielmlozano/Zoomel"
     }
 ]
 ```
@@ -116,7 +116,7 @@ $user->deleteMeeting(76198546628); //Permanently deletes a meeting, passing the 
 
 ```
 
-These methods, except for the updateMeeting, deleteMeeting and getMeetings, return a instace of ZoomMeeting, an object with all the data returrned from the API. The getMeetings return a ZoomMeetingsList instance, an obecjt with the paginator data from the API and a property named "meetings", a Laravel Collection of ZoomMeeting instnaces. Both the updateMeeting and deleteMeeting return a simple string with the action perfomed.
+These methods, except for the updateMeeting, deleteMeeting and getMeetings, return a instace of ZoomMeeting, an object with all the data returrned from the API. The getMeetings returns a ZoomMeetingsList instance, an obecjt with the paginator data from the API and a property named "meetings", a Laravel Collection of ZoomMeeting instances. Both the updateMeeting and deleteMeeting return a simple string with the action perfomed.
 
 ## ToDo:
 
