@@ -14,6 +14,7 @@ trait HasZoomAccount {
      * @return \Danielmlozano\Zoomel\ZoomUserToken
     */
     public function attachZoomToken(String $token_safe_id){
+        ZoomUserToken::where('user_id',$this->id)->delete();
         $zoom_token = ZoomUserToken::findSafeId($token_safe_id);
         $this->zoomToken()->save($zoom_token);
         return $zoom_token;
@@ -36,8 +37,11 @@ trait HasZoomAccount {
     public function getZoomAccount(){
         $zoom = new Zoom($this);
         $zoom_account = $zoom->getZoomUser();
-        if($zoom_account['statusCode']==200){
+        if($zoom_account['status_code']==200){
             return $zoom_account['content'];
+        }
+        else{
+            return $zoom_account['response']['message'];
         }
     }
 
@@ -49,8 +53,78 @@ trait HasZoomAccount {
     public function getMeetings(){
         $zoom = new Zoom($this);
         $meetings = $zoom->getZoomMeetings();
-        if($meetings['statusCode']==200){
+        if($meetings['status_code']==200){
             return $meetings['content'];
+        }
+        else{
+            return $meetings['response']['message'];
+        }
+    }
+
+    /**
+     * Return a single Zoom Meeting
+     * @param int $meeting_id
+     * @return array
+    */
+    public function getMeeting(int $meeting_id){
+        $zoom = new Zoom($this);
+        $meetings = $zoom->getZoomMeeting($meeting_id);
+        if($meetings['status_code']==200){
+            return $meetings['content'];
+        }
+        else{
+            return $meetings['response']['message'];
+        }
+    }
+
+    /**
+     * Creates a Zoom meeting
+     * @param array $meeting_data
+     * @return array
+     *
+     */
+    public function createMeeting(array $meeting_data){
+        $zoom = new Zoom($this);
+        $new_meeting = $zoom->createZoomMeeting($meeting_data);
+        if($new_meeting['status_code']==201){
+            return $new_meeting['content'];
+        }
+        else{
+            return $new_meeting['response']['message'];
+        }
+    }
+
+    /**
+     * Updates a Zoom meeting
+     * @param int $meeting_id
+     * @param array $meeting_data
+     * @return array
+     *
+     */
+    public function updateMeeting(int $meeting_id, array $meeting_data){
+        $zoom = new Zoom($this);
+        $new_meeting = $zoom->updateZoomMeeting($meeting_id,$meeting_data);
+        if($new_meeting['status_code']==204){
+            return 'updated';
+        }
+        else{
+            return $new_meeting['response']['message'];
+        }
+    }
+
+    /**
+     * Deletes a Zoom Meeting
+     * @param int $meeting_id
+     * @return array
+    */
+    public function deleteMeeting(int $meeting_id){
+        $zoom = new Zoom($this);
+        $meetings = $zoom->deleteZoomMeeting($meeting_id);
+        if($meetings['status_code']==204){
+            return 'deleted';
+        }
+        else{
+            return $meetings['response']['message'];
         }
     }
 

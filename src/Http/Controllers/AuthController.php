@@ -37,7 +37,7 @@ class AuthController extends Controller{
             $access_code = $request->input('code');
             $zoom = new Zoom();
             $auth_request = $zoom->getAuthCode($access_code);
-            if($auth_request['statusCode']==200){
+            if($auth_request['status_code']==200){
 
                 $request_content = $auth_request['content'];
 
@@ -46,10 +46,13 @@ class AuthController extends Controller{
                     'safe_id' => uniqid("$token_prefix."),
                     'auth_token' => $request_content['access_token'],
                     'refresh_token' => $request_content['refresh_token'],
+                    'expires_in' => $request_content['expires_in'],
                     'scope' => $request_content['scope'],
-
                 ]);
-                return redirect(config('zoomel.oauth_redirect_uri')."?status=".$auth_request['statusCode']."&token_id=".$zoom_user_token->safe_id);
+                return redirect(config('zoomel.oauth_redirect_uri')."?status=".$auth_request['status_code']."&token_id=".$zoom_user_token->safe_id);
+            }
+            else{
+                echo "OAuth error: ".$auth_request['response']['reason']. "<br>Code:". $auth_request['status_code'];
             }
         }
     }

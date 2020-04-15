@@ -19,6 +19,7 @@ class CreateZoomUserTokensTable extends Migration
             $table->string('safe_id');
             $table->text('auth_token');
             $table->text('refresh_token');
+            $table->integer('expires_in');
             $table->text('scope')->nullable();
             $table->timestamps();
         });

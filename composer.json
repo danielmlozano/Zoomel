@@ -20,7 +20,8 @@
         "illuminate/http": "^6.0|^7.0",
         "illuminate/routing": "^6.0|^7.0",
         "illuminate/database": "^6.0|^7.0",
-        "guzzlehttp/guzzle": "^6.3"
+        "guzzlehttp/guzzle": "^6.3",
+        "nesbot/carbon": "^2.0"
     },
     "extra": {
         "laravel": {

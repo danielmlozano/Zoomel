@@ -2,6 +2,7 @@
 namespace Danielmlozano\Zoomel;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 class ZoomUserToken extends Model
 {
@@ -16,6 +17,16 @@ class ZoomUserToken extends Model
         'auth_token',
         'refresh_token',
         'scope',
+        'expires_in',
+    ];
+
+    /**
+     * The appends properties
+     *
+     * @var array
+     */
+    public $appends = [
+        'expiring',
     ];
 
 
@@ -36,6 +47,21 @@ class ZoomUserToken extends Model
      */
     public function scopeFindSafeId($q,$safe_id){
         return $this->where('safe_id',$safe_id)->first();
+    }
+
+    /**
+     *
+     * Returns whether the token expired or is expiring
+     * @return bool|null
+     */
+    public function getExpiringAttribute(){
+        if($this->updated_at){
+            $now = Carbon::now();
+            $diff = $this->updated_at->diffInSeconds($now);
+            return $diff >= $this->expires_in;
+
+        }
+        return null;
     }
 
 }

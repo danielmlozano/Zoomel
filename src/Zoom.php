@@ -1,9 +1,12 @@
 <?php
 namespace Danielmlozano\Zoomel;
 
+use Carbon\Carbon;
 use Danielmlozano\Zoomel\Exceptions\InvalidUser;
+use Danielmlozano\Zoomel\Exceptions\UserHasNoToken;
 use GuzzleHttp\Client as Guzzle;
 use Illuminate\Support\Facades\Log;
+use GuzzleHttp\Exception\ClientException;
 
 class Zoom
 {
@@ -61,7 +64,7 @@ class Zoom
      *
      * @var string
      */
-    private $zoom_api_base_url = "https://api.zoom.us/v2/users/me";
+    private $zoom_api_base_url = "https://api.zoom.us/v2";
 
     /**
      * The Zoom Authorization process access link
@@ -69,6 +72,13 @@ class Zoom
      * @var string
      */
     public $access_link;
+
+    /**
+     * Determines if the Access token is refreshing
+     *
+     * @var bool
+     */
+    public $refreshing_access_token = false;
 
 
     /**
@@ -101,16 +111,61 @@ class Zoom
      *
      */
     public function request(String $method, String $uri, array $options = []){
-
-        if($this->user){
-            $options['headers']['Authorization'] = "Bearer ".$this->user->zoomToken->auth_token;
+        try{
+            if($this->user && !$this->refreshing_access_token){
+                if($this->user->zoomToken){
+                    $options['headers']['Authorization'] = "Bearer ".$this->refreshToken(
+                        $this->user->zoomToken
+                    )->auth_token;
+                }
+                else{
+                    throw new UserHasNoToken();
+                }
+            }
+            $request = $this->client->request($method,$uri,$options);
+            return [
+                'status_code' => $request->getStatusCode(),
+                'content' => json_decode($request->getBody(),true)
+            ];
+        }
+        catch(ClientException $e){
+            $response = $e->getResponse();
+            $exception_data = [
+                'status_code' => $response->getStatusCode(),
+                'response' => json_decode($response->getBody(),true),
+            ];
+            Log::error("Zoom API Call error:", $exception_data);
+            return $exception_data;
         }
 
-        $request = $this->client->request($method,$uri,$options);
-        return [
-            'statusCode' => $request->getStatusCode(),
-            'content' => json_decode($request->getBody(),true)
-        ];
+    }
+
+    /**
+     * Requests to Zoom API OAuth a new token from a refresh token
+     *
+     * @param \Danielmlozano\Zoomel\ZoomUserToken
+     * @return \Danielmlozano\Zoomel\ZoomUserToken
+     */
+    private function refreshToken(ZoomUserToken $token)
+    {
+        if($token->expiring){
+            $this->refreshing_access_token = true;
+            $request_options = $this->basicAuthHeaders([
+                'query' => [
+                    'grant_type' => 'refresh_token',
+                    'refresh_token' => $token->refresh_token,
+                ],
+            ]);
+            $refresh_token_request = $this->request("POST",$this->zoom_oauth_endpoint,$request_options);
+            if($refresh_token_request['status_code']==200){
+                $token->auth_token = $refresh_token_request['content']['access_token'];
+                $token->refresh_token = $refresh_token_request['content']['refresh_token'];
+                $token->expires_in = $refresh_token_request['content']['expires_in'];
+                $token->save();
+                $this->refreshing_access_token = false;
+            }
+        }
+        return $token;
     }
 
     /**
@@ -143,18 +198,45 @@ class Zoom
      *
      */
     public function getAuthCode(String $zoom_request_code){
-        $request_options = [
-            'headers' => [
-                'Authorization' => "Basic $this->zoom_auth_code",
-            ],
+        $request_options = $this->basicAuthHeaders([
             'query' => [
                 'grant_type' => 'authorization_code',
                 'code' => $zoom_request_code,
                 'redirect_uri' => $this->redirect_uri,
                 'client_id' => $this->zoom_client_id,
             ],
-        ];
+        ]);
         return $this->request("POST",$this->zoom_oauth_endpoint,$request_options);
+    }
+
+    /**
+     * Get a Request options array with basic auth header
+     *
+     * @param  array $options
+     * @return array
+     *
+     */
+    private function basicAuthHeaders($options = []){
+        return [
+            'headers' => [
+                'Authorization' => "Basic $this->zoom_auth_code",
+            ],
+        ]+$options;
+    }
+
+    /**
+     * Add JSON Content type to a request headers
+     *
+     * @param  array $options
+     * @return array
+     *
+     */
+    private function jsonContentHeaders($options = []){
+        return [
+            'headers' => [
+                'Content-Type' => 'application/json'
+            ],
+        ]+$options;
     }
 
     /**
@@ -164,8 +246,13 @@ class Zoom
      *
      */
     public function getZoomUser(){
-        $endpoint = $this->zoom_api_base_url;
-        return $this->request("GET",$endpoint);
+        try{
+            $endpoint = $this->zoom_api_base_url."/users/me";
+            return $this->request("GET",$endpoint);
+        }
+        catch(\Exception $e){
+            $this->handleException($e);
+        }
     }
 
     /**
@@ -175,8 +262,105 @@ class Zoom
      *
      */
     public function getZoomMeetings(){
-        $endpoint = $this->zoom_api_base_url."/meetings";
-        return $this->request("GET",$endpoint);
+        try{
+            $endpoint = $this->zoom_api_base_url."/users/me/meetings";
+            return $this->request("GET",$endpoint);
+        }
+        catch(\Exception $e){
+            $this->handleException($e);
+        }
+
     }
+
+    /**
+     * Gets a single Zoom Meeting
+     * @param int $meeting_id
+     * @return array
+     *
+     */
+    public function getZoomMeeting(int $meeting_id){
+        try{
+            $endpoint = $this->zoom_api_base_url."/meetings/".$meeting_id;
+            return $this->request("GET",$endpoint);
+        }
+        catch(\Exception $e){
+            $this->handleException($e);
+        }
+
+    }
+
+    /**
+     * Creates a Zoom meeting
+     *
+     * @param array $meeting_data
+     * @return array
+     *
+     */
+    public function createZoomMeeting(array $meeting_data){
+        try{
+            $meeting_data = ['body'=>json_encode($meeting_data)];
+            $options = $this->jsonContentHeaders($meeting_data);
+            $endpoint = $this->zoom_api_base_url."/users/me/meetings";
+            return $this->request("POST",$endpoint,$options);
+        }
+        catch(\Exception $e){
+            $this->handleException($e);
+        }
+    }
+
+    /**
+     * Updates a Zoom meeting
+     *
+     * @param int $meeting_id
+     * @param array $meeting_data
+     * @return array
+     *
+     */
+    public function updateZoomMeeting(int $meeting_id, array $meeting_data){
+        try{
+            $meeting_data = ['body'=>json_encode($meeting_data)];
+            $options = $this->jsonContentHeaders($meeting_data);
+            $endpoint = $this->zoom_api_base_url."/meetings/".$meeting_id;
+            return $this->request("PATCH",$endpoint,$options);
+        }
+        catch(\Exception $e){
+            $this->handleException($e);
+        }
+    }
+
+    /**
+     * Deletes a Zoom Meeting
+     * @param int $meeting_id
+     * @return array
+     *
+     */
+    public function deleteZoomMeeting(int $meeting_id){
+        try{
+            $endpoint = $this->zoom_api_base_url."/meetings/".$meeting_id;
+            return $this->request("DELETE",$endpoint);
+        }
+        catch(\Exception $e){
+            $this->handleException($e);
+        }
+
+    }
+
+    /**
+     * Handles a exception
+     *
+     * @param \Exception $e
+     * @return array
+     *
+     */
+    private function handleException($e){
+        return [
+            'status_code' => $e->getCode(),
+            'response' => [
+                'message' => $e->getMessage()
+            ],
+        ];
+    }
+
+
 
 }
