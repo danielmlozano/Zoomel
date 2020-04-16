@@ -71,7 +71,7 @@ class Zoom
      *
      * @var string
      */
-    protected $access_link;
+    public $access_link;
 
     /**
      * Determines if the Access token is refreshing
