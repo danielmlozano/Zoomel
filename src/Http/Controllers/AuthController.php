@@ -47,7 +47,7 @@ class AuthController extends Controller{
                     'expires_in' => $request_content['expires_in'],
                     'scope' => $request_content['scope'],
                 ]);
-                return redirect(config('zoomel.oauth_redirect_uri')."?status=".$auth_request['status_code']."&token_id=".$zoom_user_token->safe_id);
+                return redirect(config('zoomel.oauth_redirect_uri')."?connection=zoom&status=".$auth_request['status_code']."&token_id=".$zoom_user_token->safe_id);
             }
             else{
                 echo "OAuth error: ".$auth_request['response']['reason']. "<br>Code:". $auth_request['status_code'];
