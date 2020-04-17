@@ -46,7 +46,7 @@ class ZoomUserToken extends Model
      * @return \Danielmlozano\Zoomel\ZoomUserToken|null
      */
     public function scopeFindSafeId($q,$safe_id){
-        return $this->where('safe_id',$safe_id)->first();
+        return $this->where('safe_id',$safe_id);
     }
 
     /**

@@ -38,9 +38,7 @@ class AuthController extends Controller{
             $zoom = new Zoom();
             $auth_request = $zoom->getAuthCode($access_code);
             if($auth_request['status_code']==200){
-
                 $request_content = $auth_request['content'];
-
                 $token_prefix = substr($request_content['access_token'],0,64);
                 $zoom_user_token = ZoomUserToken::create([
                     'safe_id' => uniqid("$token_prefix."),

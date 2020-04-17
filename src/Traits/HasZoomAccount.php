@@ -13,14 +13,17 @@ trait HasZoomAccount {
      * Get a Danielmlozano\Zoomel\ZoomUserToken instance from a
      * given safe_id string, then saves the relationship to the user
      *
-     * @param string $token_safe_id
+     * @param \Danielmlozano\Zoomel\ZoomUserToken|string $token
      * @return \Danielmlozano\Zoomel\ZoomUserToken
     */
-    public function attachZoomToken(String $token_safe_id){
+    public function attachZoomToken($token){
+        $param = getType($token);
         ZoomUserToken::where('user_id',$this->id)->delete();
-        $zoom_token = ZoomUserToken::findSafeId($token_safe_id);
-        $this->zoomToken()->save($zoom_token);
-        return $zoom_token;
+        if($param=='string')
+            $token = ZoomUserToken::findSafeId($token);
+
+        $this->zoomToken()->save($token);
+        return $token;
     }
 
     /**

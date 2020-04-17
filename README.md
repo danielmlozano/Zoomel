@@ -89,6 +89,11 @@ $safe_token_id = $request->input('token_id');
 
 //The $user instace could come from auth, request or directly from the database.
 $user->attachZoomToken($safe_token_id);
+
+//You can also pass a ZoomUserToken instance to the attachZoomToken method.
+$token = ZoomUserToken::findSafeId($safe_token_id)->first();
+$user->attachZoomToken($token);
+
 ```
 
 9. Now, the user can perfom a series of actions in its Zoom Account
