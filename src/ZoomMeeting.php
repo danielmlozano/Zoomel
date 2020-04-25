@@ -1,6 +1,7 @@
 <?php
 namespace Danielmlozano\Zoomel;
 use Danielmlozano\Zoomel\ZoomObject;
+use Illuminate\Support\Facades\Log;
 
 class ZoomMeeting extends ZoomObject
 {
@@ -114,6 +115,12 @@ class ZoomMeeting extends ZoomObject
     public $settings;
 
     /**
+     * The meeting recurrence data
+     * @var ZoomMeetingRecurrence
+     */
+    public $recurrence;
+
+    /**
      * Create a new ZoomMeeting instance.
      *
      * @param array|null $meeting_data
@@ -121,7 +128,12 @@ class ZoomMeeting extends ZoomObject
      *
      */
     public function __construct(array $meeting_data = []){
+        if(isset($meeting_data['recurrence']) && !empty($meeting_data['recurrence'])){
+            $this->recurrence = new ZoomMeetingRecurrence($meeting_data['recurrence']);
+            unset($meeting_data['recurrence']);
+        }
         $this->fromArray($meeting_data);
+
     }
 
 }

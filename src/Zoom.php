@@ -1,12 +1,13 @@
 <?php
 namespace Danielmlozano\Zoomel;
 
-use Carbon\Carbon;
+use Danielmlozano\Zoomel\Exceptions\CantRefreshToken;
 use Danielmlozano\Zoomel\Exceptions\InvalidUser;
 use Danielmlozano\Zoomel\Exceptions\UserHasNoToken;
 use GuzzleHttp\Client as Guzzle;
 use Illuminate\Support\Facades\Log;
 use GuzzleHttp\Exception\ClientException;
+use Illuminate\Support\Carbon;
 
 class Zoom
 {
@@ -114,9 +115,21 @@ class Zoom
         try{
             if($this->user && !$this->refreshing_access_token){
                 if($this->user->zoomToken){
-                    $options['headers']['Authorization'] = "Bearer ".$this->refreshToken(
-                        $this->user->zoomToken
-                    )->auth_token;
+                    try{
+                        $options['headers']['Authorization'] = "Bearer ".$this->refreshToken(
+                            $this->user->zoomToken
+                        )->auth_token;
+                    }
+                    catch(CantRefreshToken $e){
+                         return [
+                            'status_code' => 401,
+                            'response' => [
+                                'message' => $e->getMessage(),
+                                'exception' => $e,
+                            ],
+                        ];
+                    }
+
                 }
                 else{
                     throw new UserHasNoToken();
@@ -163,6 +176,10 @@ class Zoom
                 $token->expires_in = $refresh_token_request['content']['expires_in'];
                 $token->save();
                 $this->refreshing_access_token = false;
+            }
+            else{
+                $this->refreshing_access_token = false;
+                throw new CantRefreshToken();
             }
         }
         return $token;
@@ -306,6 +323,17 @@ class Zoom
      */
     public function createZoomMeeting(array $meeting_data){
         try{
+            if(!isset($meeting_data['timezone']) || empty($meeting_data['timezone']))
+                $meeting_data['timezone'] = config('app.timezone');
+
+            if($meeting_data['start_time']){
+                $date = new Carbon($meeting_data['start_time'],$meeting_data['timezone']);
+                $meeting_data['start_time'] = $date->toDateTimeLocalString();
+            }
+
+            if(isset($meeting_data['recurrence']) || empty($meeting_data['recurrence']))
+                $meeting_data['type'] = 8;
+            Log::debug($meeting_data);
             $meeting_data = ['body'=>json_encode($meeting_data)];
             $options = $this->jsonContentHeaders($meeting_data);
             $endpoint = $this->zoom_api_base_url."/users/me/meetings";
@@ -326,6 +354,7 @@ class Zoom
      */
     public function updateZoomMeeting(int $meeting_id, array $meeting_data){
         try{
+            $meeting_data['timezone'] = config('app.timezone');
             $meeting_data = ['body'=>json_encode($meeting_data)];
             $options = $this->jsonContentHeaders($meeting_data);
             $endpoint = $this->zoom_api_base_url."/meetings/".$meeting_id;
