@@ -331,8 +331,9 @@ class Zoom
                 $meeting_data['start_time'] = $date->toDateTimeLocalString();
             }
 
-            if(isset($meeting_data['recurrence']) || empty($meeting_data['recurrence']))
+            if(isset($meeting_data['recurrence']) && $meeting_data['is_recurring'])
                 $meeting_data['type'] = 8;
+
             Log::debug($meeting_data);
             $meeting_data = ['body'=>json_encode($meeting_data)];
             $options = $this->jsonContentHeaders($meeting_data);
